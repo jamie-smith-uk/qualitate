@@ -1,0 +1,13 @@
+@(fileLoadRequestForm:Form[FileLoadRequest])(implicit messages: Messages)
+
+@import helper._
+
+@main("welcome") {
+<h1>Customer Form</h1>
+@form(action=routes.Application.createCustomer()) {
+@inputText(fileLoadRequestForm("File Name"))
+@inputText(fileLoadRequestForm("Customer Name"))
+@select(field = fileLoadRequestForm("Data Adapter"), options = Seq("Outbrain"->"Outbrain", "Taboola"->"Taboola"))
+<input type="submit" value="Submit">
+}
+}
