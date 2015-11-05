@@ -1,5 +1,7 @@
 package controllers
 
+import java.io.File
+
 import models.FileLoadRequest
 import play.api._
 import play.api.mvc._
@@ -15,6 +17,8 @@ import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 
+case class Specs(adapter: String)
+
 class Application extends Controller {
 
   def index = Action {
@@ -23,9 +27,16 @@ class Application extends Controller {
 
   def fileLoadRequest = Form(
     mapping(
-      "File Name" -> nonEmptyText,
-      "Data Adapter" -> nonEmptyText
+    "fileName" -> nonEmptyText,
+      "dataAdapter" -> nonEmptyText
     )(FileLoadRequest.apply)(FileLoadRequest.unapply))
+
+
+  val uploadForm = Form(
+  mapping (
+   "dataAdapter" -> nonEmptyText
+  )(Specs.apply)(Specs.unapply))
+
 
 
   def createSchema = Action {
@@ -51,24 +62,42 @@ class Application extends Controller {
   }
 
 
-  def createCustomer = Action { implicit request => {
-    fileLoadRequest.bindFromRequest().fold(
-      formWithErrors => {
-        BadRequest(views.html.index(formWithErrors))
-      },
-      fileRequest => {
-        processFileRequest(fileRequest.location, fileRequest.adapterType)
-        Ok(s"File Requested: ${fileRequest.location} , Adapter Requested: ${fileRequest.adapterType}")
-      }
+  def createCustomer = Action(parse.multipartFormData) { implicit request => {
+
+    val sp: Option[Specs] = uploadForm.bindFromRequest().fold(
+      errFrm => None,
+      spec => Some(spec)
     )
+
+    request.body.file("fileName").map { f =>
+      sp.map { spec =>
+        import java.io.File
+        val filename = f.filename
+        val contentType = f.contentType
+
+        Logger.debug("uploading file ...")
+        val uploadFile = new File(s"$filename")
+        val fileThing = f.ref.moveTo(uploadFile)
+
+        Logger.debug("File uploaded! " + fileThing.getName + ", " + fileThing.length())
+
+        processFileRequest(fileThing, spec.adapter)
+
+        Ok(s"File Requested: ${fileThing.getName} , Adapter Requested: ${spec.adapter}")
+        
+      }.getOrElse {
+        BadRequest("Form Binding Error")
+      }
+    }.getOrElse {
+      BadRequest("File not attached")
+    }
   }
   }
 
-  def processFileRequest(file:String, adapter:String) ={
 
+  def processFileRequest(file:File, adapter:String) ={
     try {
-      val adverts = new ExcelReader(mapAdapter(adapter)).readFile(file)
-      DataAccess.addNativeAdverts(adverts)
+      DataAccess.addNativeAdverts(new ExcelReader(mapAdapter(adapter)).readFile(file))
     }
     catch {
       case e: Throwable => Logger.error(e.getMessage)

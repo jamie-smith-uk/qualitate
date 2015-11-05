@@ -45,7 +45,7 @@ object DataAccess {
     val setup = DBIO.seq(
       NativeAdvertsDAO ++= nativeAdverts
     )
-    Await.result(DataAccess.dataconnection.run(setup), 1.second)
+    Await.result(DataAccess.dataconnection.run(setup), 20.second)
   }
 
 

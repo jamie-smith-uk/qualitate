@@ -4,10 +4,10 @@
 
 @main("welcome") {
 <h1>Customer Form</h1>
-@form(action=routes.Application.createCustomer()) {
-@inputText(fileLoadRequestForm("File Name"))
-@inputText(fileLoadRequestForm("Customer Name"))
-@select(field = fileLoadRequestForm("Data Adapter"), options = Seq("Outbrain"->"Outbrain", "Taboola"->"Taboola"))
+@form(action=routes.Application.createCustomer, 'enctype -> "multipart/form-data") {
+@inputFile(fileLoadRequestForm("fileName"))
+@inputText(fileLoadRequestForm("customerName"))
+@select(field = fileLoadRequestForm("dataAdapter"), options = Seq("Outbrain"->"Outbrain", "Taboola"->"Taboola"))
 <input type="submit" value="Submit">
 }
 }

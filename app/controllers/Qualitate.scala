@@ -17,7 +17,7 @@ object Qualitate extends App {
     Logger.debug("Starting Up ...")
 
     setUpSchema(NativeAdvertsDAO.schema)
-
+/*
     val outbrainNativeAdvertsList = new ExcelReader(OutbrainDataAdapter).readFile("C:\\work\\qualitate\\Files\\OutBrain.xlsx")
     val taboolaNativeAdvertsList = new ExcelReader(TaboolaDataAdapter).readFile("C:\\work\\qualitate\\Files\\Taboola.xlsx")
     val contentClickNativeAdvertsList = new ExcelReader(ContentClickDataAdapter).readFile("C:\\work\\qualitate\\Files\\ContentClick.xlsx")
@@ -25,6 +25,7 @@ object Qualitate extends App {
     DataAccess.addNativeAdverts(outbrainNativeAdvertsList)
     DataAccess.addNativeAdverts(taboolaNativeAdvertsList)
     DataAccess.addNativeAdverts(contentClickNativeAdvertsList)
+    */
   }
   catch {
     case e: Throwable =>  Logger.error(e.getMessage)

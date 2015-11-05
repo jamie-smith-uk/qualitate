@@ -1,13 +1,13 @@
 package uk.co.qualitate
 
-import java.io.{FileInputStream }
+import java.io.{File, FileInputStream}
 import org.apache.poi.ss.usermodel.{Cell, WorkbookFactory, DataFormatter, Row}
 
 import scala.collection.mutable.ListBuffer
 
 class ExcelReader(adapter:ExcelDataAdapter) {
 
-  def readFile(file: String):List[NativeAdvert] = {
+  def readFile(file: File):List[NativeAdvert] = {
 
     val wb = WorkbookFactory.create(new FileInputStream(file))
     val sheet = wb.getSheetAt(0)
