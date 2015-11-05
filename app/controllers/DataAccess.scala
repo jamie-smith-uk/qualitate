@@ -3,12 +3,10 @@ package uk.co.qualitate
 import slick.driver.PostgresDriver
 import slick.driver.PostgresDriver.api._
 import slick.jdbc.meta.MTable
-import scala.concurrent.{Await}
+import scala.concurrent.{Future, Await}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import play.api.Logger
-
-import scala.concurrent.Await
 import scala.util.{Failure, Success}
 
 object DataAccess {
@@ -27,7 +25,7 @@ object DataAccess {
 
   def dropSchema(schema: PostgresDriver.SchemaDescription) = {
     try {
-      Await.result(DataAccess.dataconnection.run(schema.drop), 1.second)
+      Await.result(DataAccess.dataconnection.run(schema.drop), 20.second)
     }
     catch {
       case e: Throwable => Logger.error(e.getMessage)
@@ -36,7 +34,7 @@ object DataAccess {
 
   def createSchema(schema: PostgresDriver.SchemaDescription) = {
     try {
-      Await.result(DataAccess.dataconnection.run(NativeAdvertsDAO.schema.create), 1.second)
+      Await.result(DataAccess.dataconnection.run(NativeAdvertsDAO.schema.create), 20.second)
     }
     catch {
       case e: Throwable =>  Logger.error(e.getMessage)
@@ -51,4 +49,18 @@ object DataAccess {
   }
 
 
+
+  def asyncGetNativeAdverts(): Future[Seq[NativeAdvert]] = {
+    DataAccess.dataconnection.run(NativeAdvertsDAO.result)
+  }
+
+  def getNativeAdverts() = {
+    val queryResultFuture: Future[Seq[NativeAdvert]] = DataAccess.dataconnection.run(NativeAdvertsDAO.result)
+
+    queryResultFuture.onSuccess { case s => {
+      Logger.debug("There are " + s.length + " adverts found ...")
+      s.foreach{ f => Logger.debug(f.toString)  }
+      }
+    }
+  }
 }

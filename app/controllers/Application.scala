@@ -12,6 +12,7 @@ import slick.driver.PostgresDriver.api._
 import play.api.Logger
 import play.api.i18n.Messages.Implicits._
 import play.api.Play.current
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 
 class Application extends Controller {
@@ -26,20 +27,29 @@ class Application extends Controller {
       "Data Adapter" -> nonEmptyText
     )(FileLoadRequest.apply)(FileLoadRequest.unapply))
 
-  def db = Action {
 
+  def createSchema = Action {
     try {
      setUpSchema(NativeAdvertsDAO.schema)
-
     }
     catch {
       case e: Throwable => Logger.error(e.getMessage)
-    } finally {
-      Logger.debug("Closing Down ...")
-      DataAccess.dataconnection.close
+        Ok(s"Schema Creation Failed")
     }
-    Ok(views.html.index(fileLoadRequest))
+    Ok(s"Schema Created")
   }
+
+
+  def getNativeAdverts = Action.async {
+    val futureAds = DataAccess.asyncGetNativeAdverts()
+    futureAds.map(f => {
+      var resultsString = "Got " + f.length + " results."
+      f.foreach{na => resultsString += na.toString }
+      Ok(resultsString)
+    }
+    )
+  }
+
 
   def createCustomer = Action { implicit request => {
     fileLoadRequest.bindFromRequest().fold(
@@ -57,16 +67,11 @@ class Application extends Controller {
   def processFileRequest(file:String, adapter:String) ={
 
     try {
-      // remove this soon!
-      setUpSchema(NativeAdvertsDAO.schema)
       val adverts = new ExcelReader(mapAdapter(adapter)).readFile(file)
       DataAccess.addNativeAdverts(adverts)
     }
     catch {
       case e: Throwable => Logger.error(e.getMessage)
-    } finally {
-      Logger.debug("Closing Down DB Connection")
-      DataAccess.dataconnection.close
     }
   }
 
@@ -77,7 +82,6 @@ class Application extends Controller {
   }
 
   def setUpSchema(schema: PostgresDriver.SchemaDescription) = {
-    Logger.debug("Setting up Schema...")
     DataAccess.dropSchema(schema)
     DataAccess.createSchema(schema)
   }

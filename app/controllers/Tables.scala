@@ -6,6 +6,9 @@ import scala.concurrent.Future
 
 
 case class NativeAdvert(id: Long, title: String, clicks: Int, cost: Double, ccy: String, url: String, impressions: Int)
+{
+  override def toString(): String = "\r\nTitle:" + title + ", Clicks:" + clicks + ", Cost: " + cost + ", CCY: " + ccy + ", URL: " + url + ", Impressions: " + impressions;
+}
 
 class NativeAdverts(tag: Tag)
   extends Table[NativeAdvert](tag, "NATIVEADVERTS") {
