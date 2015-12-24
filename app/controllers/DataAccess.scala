@@ -1,5 +1,8 @@
 package uk.co.qualitate
 
+import akka.actor.PoisonPill
+import controllers.{Communication, Send, Start}
+import play.libs.Akka
 import slick.driver.PostgresDriver
 import slick.driver.PostgresDriver.api._
 import slick.jdbc.meta.MTable
@@ -48,6 +51,26 @@ object DataAccess {
     Await.result(DataAccess.dataconnection.run(setup), 20.second)
   }
 
+
+  def asyncAddNativeAdverts(nativeAdverts:List[NativeAdvert]) = {
+    val setup = DBIO.seq(
+      NativeAdvertsDAO ++= nativeAdverts
+    )
+
+    val res: Future[Unit] = DataAccess.dataconnection.run(setup)
+
+    res onComplete{
+      case Success(value) => {
+        Logger.debug("Native Adverts added.  Pushing Message ...")
+        Communication.sendtoclient("Native Adverts successfully uploaded")
+      }
+      case Failure(e) => {
+        Logger.error(e.getMessage)
+        Communication.sendtoclient("Could not add Native Adverts")
+      }
+    }
+
+  }
 
 
   def asyncGetNativeAdverts(): Future[Seq[NativeAdvert]] = {

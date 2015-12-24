@@ -3,10 +3,12 @@
 # ~~~~
 
 # Home page
-GET     /                           controllers.Application.index
-POST    /                           controllers.Application.createCustomer
-GET     /createSchema               controllers.Application.createSchema
-GET     /getNativeAdverts           controllers.Application.getNativeAdverts
+GET     /                                   controllers.App.index
+POST    /                                   controllers.App.createCustomer
+GET     /createSchema                       controllers.App.createSchema
+GET     /getNativeAdverts                   controllers.App.getNativeAdverts
+GET     /messageSocket                      controllers.App.messageSocket
+GET     /assets/javascripts/testmessage.js  controllers.App.testMessage
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

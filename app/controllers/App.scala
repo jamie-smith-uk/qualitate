@@ -1,13 +1,17 @@
 package controllers
 
+import akka.actor._
 import java.io.File
+import java.nio.file.{Path, Files}
 
 import models.FileLoadRequest
 import play.api._
+import play.api.libs.iteratee.{Enumerator, Iteratee, Concurrent}
 import play.api.mvc._
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.mvc._
+import play.libs.Akka
 import slick.driver.PostgresDriver
 import uk.co.qualitate._
 import slick.driver.PostgresDriver.api._
@@ -19,7 +23,10 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 case class Specs(adapter: String)
 
-class Application extends Controller {
+class App extends Controller {
+
+  val system = ActorSystem("Qualitate")
+  Communication.setup()
 
   def index = Action {
     Ok(views.html.index(fileLoadRequest))
@@ -61,7 +68,6 @@ class Application extends Controller {
     )
   }
 
-
   def createCustomer = Action(parse.multipartFormData) { implicit request => {
 
     val sp: Option[Specs] = uploadForm.bindFromRequest().fold(
@@ -75,16 +81,15 @@ class Application extends Controller {
         val filename = f.filename
         val contentType = f.contentType
 
-        Logger.debug("uploading file ...")
-        val uploadFile = new File(s"$filename")
-        val fileThing = f.ref.moveTo(uploadFile)
+        Logger.debug("uploading file ... " + filename )
 
-        Logger.debug("File uploaded! " + fileThing.getName + ", " + fileThing.length())
-
+        val uploadFile = File.createTempFile(s"uploadedFile", ".tmp", new File("/tmp/files"))
+        val fileThing = f.ref.moveTo(uploadFile, true)
         processFileRequest(fileThing, spec.adapter)
 
-        Ok(s"File Requested: ${fileThing.getName} , Adapter Requested: ${spec.adapter}")
-        
+        // response
+        Ok(views.html.result("File Uploaded")(s"File Upload Requested"))
+
       }.getOrElse {
         BadRequest("Form Binding Error")
       }
@@ -94,13 +99,39 @@ class Application extends Controller {
   }
   }
 
+  def testMessage = Action {
+    Logger.debug("testMessage Action called")
+    Ok(views.js.testmessage.render())
+  }
+
+  /*
+   * WebSocket Stuff
+   */
+  def messageSocket = WebSocket.using[String] { request =>
+
+    val (out,channel) = Concurrent.broadcast[String]
+
+    // start up the listener with the channel
+    val listener = Akka.system().actorSelection("akka://application/user/listener")
+    listener ! Start(channel)
+
+    val in = Iteratee.foreach[String] {
+      msg =>
+        Logger.debug(msg)
+    }
+    (in,out)
+  }
+
 
   def processFileRequest(file:File, adapter:String) ={
     try {
-      DataAccess.addNativeAdverts(new ExcelReader(mapAdapter(adapter)).readFile(file))
+      DataAccess.asyncAddNativeAdverts(new ExcelReader(mapAdapter(adapter)).readFile(file))
     }
     catch {
-      case e: Throwable => Logger.error(e.getMessage)
+      case e: Throwable => {
+        Logger.error(e.getMessage)
+       Communication.sendtoclient("Could not add Native Adverts")
+      }
     }
   }
 
