@@ -100,7 +100,6 @@ class App extends Controller {
   }
 
   def testMessage = Action {
-    Logger.debug("testMessage Action called")
     Ok(views.js.testmessage.render())
   }
 

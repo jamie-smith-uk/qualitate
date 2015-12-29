@@ -11,12 +11,12 @@
 
       function onOpen(evt)
       {
-         //writeToDiv("Connected");
+         writeToDiv("Connected");
       }
 
       function onClose(evt)
       {
-        //writeToDiv("Disconnected");
+        writeToDiv("Disconnected");
       }
 
       function onMessage(evt)
@@ -26,7 +26,7 @@
 
       function onError(evt)
       {
-        //writeToDiv("Error: " + evt.data);
+        writeToDiv("Error: " + evt.data);
       }
 
       function doSend(message)
