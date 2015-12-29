@@ -83,7 +83,7 @@ class App extends Controller {
 
         Logger.debug("uploading file ... " + filename )
 
-        val uploadFile = File.createTempFile(s"uploadedFile", ".tmp", new File("/tmp/files"))
+        val uploadFile = File.createTempFile(s"uploadedFile", ".tmp")
         val fileThing = f.ref.moveTo(uploadFile, true)
         processFileRequest(fileThing, spec.adapter)
 
